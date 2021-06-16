@@ -22,6 +22,7 @@ enum class TokenKind {
     REAL,
     ARRAY,
     OF,
+    RECORD,
 
     EqualsToken,             // =
     NotEqualsToken,         // !=
@@ -140,5 +141,10 @@ enum class TokenKind {
     AddOpSyntax,
     MultOpSyntax,
     VariMoreSyntax,
+    RecTypeSyntax,
+    FieldDecListSyntax,
+    FieldDecMoreSyntax,
+    IdListSyntax,
+    IdMoreSyntax,
 
 }

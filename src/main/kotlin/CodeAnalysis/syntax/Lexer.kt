@@ -47,6 +47,7 @@ class Lexer(data: Reader) {
         reserve(SyntaxToken(TokenKind.OF, "of"))
         reserve(SyntaxToken(TokenKind.READ, "read"))
         reserve((SyntaxToken(TokenKind.WRITE, "write")))
+        reserve(SyntaxToken(TokenKind.RECORD, "record"))
 
         this.data = data
     }

@@ -1,3 +1,3 @@
 
-rootProject.name = "SNLCompiler"
+rootProject.name = "SNLParser"
 

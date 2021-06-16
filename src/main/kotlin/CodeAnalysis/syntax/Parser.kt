@@ -156,11 +156,11 @@ class RDParser {
 
     private fun parseTypeDefine(): SyntaxNode = when(current.kind) {
         TokenKind.INTEGER, TokenKind.CHAR -> {
-            var baseTypeSyntax = parseBaseTypeSyntax()
+            var baseTypeSyntax = parseBaseType()
             CombinedSyntax(TokenKind.TypeDefineSyntax, arrayListOf(baseTypeSyntax))
         }
 
-        TokenKind.ARRAY -> {
+        TokenKind.ARRAY, TokenKind.RECORD -> {
             var structureTypeSyntax = parseStructureType()
             CombinedSyntax(TokenKind.TypeDefineSyntax, arrayListOf(structureTypeSyntax))
         }
@@ -179,7 +179,69 @@ class RDParser {
             var arrayType = parseArrayType()
             CombinedSyntax(TokenKind.StructureTypeSyntax, arrayListOf(arrayType))
         }
-        // TODO 添加Record
+        TokenKind.RECORD -> {
+            var recType = parseRecType()
+            CombinedSyntax(TokenKind.StructureTypeSyntax, arrayListOf(recType))
+        }
+        else -> BadSyntax(current)
+    }
+
+    private fun parseRecType(): SyntaxNode = when(current.kind) {
+        TokenKind.RECORD -> {
+            var recordToken = matchToken(TokenKind.RECORD)
+            var fieldDecList = parseFieldDecList()
+            var endToken = matchToken(TokenKind.END)
+            CombinedSyntax(TokenKind.RecTypeSyntax, arrayListOf(recordToken, fieldDecList, endToken))
+        }
+        else -> BadSyntax(current)
+    }
+
+    private fun parseFieldDecList(): SyntaxNode = when(current.kind) {
+        TokenKind.INTEGER, TokenKind.CHAR -> {
+            var baseType = parseBaseType()
+            var idList = parseIdList()
+            var semiToken = matchToken(TokenKind.SemiToken)
+            var fieldDecMore = parseFieldDecMore()
+            CombinedSyntax(TokenKind.FieldDecListSyntax, arrayListOf(baseType, idList, semiToken, fieldDecMore))
+        }
+
+        TokenKind.ARRAY -> {
+            var arrayType = parseArrayType()
+            var idList = parseIdList()
+            var semiToken = matchToken(TokenKind.SemiToken)
+            var fieldDecMore = parseFieldDecMore()
+            CombinedSyntax(TokenKind.FieldDecListSyntax, arrayListOf(arrayType, idList, semiToken, fieldDecMore))
+        }
+
+        else -> BadSyntax(current)
+    }
+
+    private fun parseFieldDecMore(): SyntaxNode = when(current.kind) {
+        TokenKind.END -> SyntaxToken.EmptyToken
+        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY -> {
+            var fieldDecList = parseFieldDecList()
+            CombinedSyntax(TokenKind.FieldDecMoreSyntax, arrayListOf(fieldDecList))
+        }
+        else -> BadSyntax(current)
+    }
+
+    private fun parseIdList(): SyntaxNode = when(current.kind) {
+        TokenKind.ID -> {
+            var idToken = matchToken(TokenKind.ID)
+            var idMore = parseIdMore()
+            CombinedSyntax(TokenKind.IdListSyntax, arrayListOf(idToken, idMore))
+        }
+        else -> BadSyntax(current)
+    }
+
+    private fun parseIdMore(): SyntaxNode = when(current.kind) {
+        TokenKind.SemiToken -> SyntaxToken.EmptyToken
+        TokenKind.COMMA -> {
+            var commaToken = matchToken(TokenKind.COMMA)
+            var idListSyntax = parseIdList()
+            CombinedSyntax(TokenKind.IdMoreSyntax, arrayListOf(commaToken, idListSyntax))
+        }
+
         else -> BadSyntax(current)
     }
 
@@ -192,7 +254,7 @@ class RDParser {
             var high = parseHigh()
             var rbToken = matchToken(TokenKind.RBRACKET)
             var ofToken = matchToken(TokenKind.OF)
-            var baseType = parseBaseTypeSyntax()
+            var baseType = parseBaseType()
             CombinedSyntax(TokenKind.ArrayTypeSyntax, arrayListOf(arrayToken, lbToken, low, dotdotToken, high, rbToken, ofToken, baseType))
         }
 
@@ -215,7 +277,7 @@ class RDParser {
         else -> BadSyntax(current)
     }
 
-    private fun parseBaseTypeSyntax(): SyntaxNode = when(current.kind) {
+    private fun parseBaseType(): SyntaxNode = when(current.kind) {
         TokenKind.INTEGER, TokenKind.CHAR -> {
             var token = matchToken(current.kind)
             CombinedSyntax(TokenKind.BaseTypeSyntax, arrayListOf(token))
@@ -242,8 +304,7 @@ class RDParser {
     }
 
     private fun parseVarDecList(): SyntaxNode = when(current.kind) {
-        // TODO 添加RECORD
-        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.ID -> {
+        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.RECORD, TokenKind.ID -> {
             var typeDef = parseTypeDefine()
             var varIdList = parseVarIdList()
             var semiToken = matchToken(TokenKind.SemiToken)
@@ -255,8 +316,7 @@ class RDParser {
 
     private fun parseVarDecMore(): SyntaxNode = when(current.kind) {
         TokenKind.PROCEDURE, TokenKind.BEGIN -> SyntaxToken.EmptyToken
-        // TODO 添加RECORD
-        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.ID -> {
+        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.RECORD, TokenKind.ID -> {
             var varDecList = parseVarDecList()
             CombinedSyntax(TokenKind.VarDeclareMoreSyntax, arrayListOf(varDecList))
         }
@@ -322,8 +382,7 @@ class RDParser {
     // 参数声明
     private fun parseParamList(): SyntaxNode = when(current.kind) {
         TokenKind.ClosedParenToken -> SyntaxToken.EmptyToken
-        // TODO 添加RECORD
-        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.ID, TokenKind.VAR -> {
+        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.RECORD, TokenKind.ID, TokenKind.VAR -> {
             var paramDecList = parseParamDecList()
             CombinedSyntax(TokenKind.ParamListSyntax, arrayListOf(paramDecList))
         }
@@ -332,8 +391,7 @@ class RDParser {
     }
 
     private fun parseParamDecList(): SyntaxNode = when(current.kind){
-        // TODO 添加RECORD
-        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.ID, TokenKind.VAR -> {
+        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.RECORD, TokenKind.ID, TokenKind.VAR -> {
             var param = parseParam()
             var paramMore = parseParamMore()
             CombinedSyntax(TokenKind.ParamDecListSyntax, arrayListOf(param, paramMore))
@@ -352,8 +410,7 @@ class RDParser {
     }
 
     private fun parseParam(): SyntaxNode = when(current.kind) {
-        // TODO 添加RECORD
-        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.ID -> {
+        TokenKind.INTEGER, TokenKind.CHAR, TokenKind.ARRAY, TokenKind.RECORD, TokenKind.ID -> {
             var typeDef = parseTypeDefine()
             var formList = parseFormList()
             CombinedSyntax(TokenKind.ParamSyntax, arrayListOf(typeDef, formList))
